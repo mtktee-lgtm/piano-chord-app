@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Piano Chord Visualizer</title>
+<style>
+  :root {
+    --bg: #1a1a2e;
+    --surface: #16213e;
+    --surface2: #0f3460;
+    --accent: #e94560;
+    --accent2: #f5a623;
+    --text: #eaeaea;
+    --text2: #a0a8b8;
+    --white-key: #f5f5f0;
+    --black-key: #1a1a1a;
+    --highlight: #e94560;
+    --highlight-root: #f5a623;
+    --warning-bg: #3a1a1a;
+    --warning-border: #e94560;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    min-height: 100vh;
+    padding: 20px;
+  }
+
+  h1 {
+    text-align: center;
+    font-size: 1.8rem;
+    margin-bottom: 4px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .subtitle {
+    text-align: center;
+    color: var(--text2);
+    font-size: 0.85rem;
+    margin-bottom: 24px;
+  }
+
+  .controls {
+    max-width: 860px;
+    margin: 0 auto 28px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 14px;
+  }
+
+  .control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  select {
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--surface2);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 0.95rem;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.2s;
+    width: 100%;
+  }
+
+  select:focus, select:hover { border-color: var(--accent); }
+
+  .extensions-grid {
+    max-width: 860px;
+    margin: 0 auto 20px;
+    background: var(--surface);
+    border: 1px solid var(--surface2);
+    border-radius: 12px;
+    padding: 14px 16px;
+  }
+
+  .extensions-grid label.section-label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 10px;
+  }
+
+  .ext-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .ext-btn {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid transparent;
+    border-radius: 6px;
+    padding: 5px 12px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    user-select: none;
+  }
+
+  .ext-btn:hover { border-color: var(--accent); }
+  .ext-btn.active { background: var(--accent); border-color: var(--accent); font-weight: 600; }
+  .ext-btn.conflict { background: #4a2020; border-color: var(--warning-border); }
+
+  .toggles {
+    max-width: 860px;
+    margin: 0 auto 20px;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .toggle-btn {
+    background: var(--surface);
+    color: var(--text2);
+    border: 1px solid var(--surface2);
+    border-radius: 8px;
+    padding: 7px 16px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    user-select: none;
+  }
+
+  .toggle-btn.active {
+    background: var(--surface2);
+    color: var(--text);
+    border-color: var(--accent2);
+  }
+
+  .warning-box {
+    max-width: 860px;
+    margin: 0 auto 16px;
+    background: var(--warning-bg);
+    border: 1px solid var(--warning-border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 0.85rem;
+    color: #ff8888;
+    display: none;
+  }
+
+  .warning-box.visible { display: block; }
+
+  .chord-display {
+    max-width: 860px;
+    margin: 0 auto 24px;
+    text-align: center;
+  }
+
+  .chord-name {
+    font-size: 2.2rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    background: linear-gradient(135deg, #fff, var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .chord-notes-list {
+    margin-top: 8px;
+    font-size: 0.95rem;
+    color: var(--text2);
+    letter-spacing: 0.08em;
+  }
+
+  .chord-notes-list span.root-note { color: var(--highlight-root); font-weight: 700; }
+  .chord-notes-list span.other-note { color: var(--text); }
+
+  .piano-wrap {
+    max-width: 900px;
+    margin: 0 auto 32px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+  }
+
+  .piano {
+    position: relative;
+    display: flex;
+    height: 160px;
+    min-width: 520px;
+    margin: 0 auto;
+    width: fit-content;
+  }
+
+  .white-key {
+    position: relative;
+    width: 46px;
+    height: 160px;
+    background: var(--white-key);
+    border: 1px solid #bbb;
+    border-top: none;
+    border-radius: 0 0 6px 6px;
+    cursor: default;
+    flex-shrink: 0;
+    transition: background 0.15s;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+    padding-bottom: 8px;
+  }
+
+  .white-key.lit {
+    background: var(--highlight);
+    border-color: #c00;
+    box-shadow: 0 0 12px rgba(233,69,96,0.6);
+  }
+
+  .white-key.lit-root {
+    background: var(--highlight-root);
+    border-color: #c07000;
+    box-shadow: 0 0 12px rgba(245,166,35,0.7);
+  }
+
+  .black-key {
+    position: absolute;
+    width: 28px;
+    height: 98px;
+    background: var(--black-key);
+    border-radius: 0 0 5px 5px;
+    z-index: 2;
+    top: 0;
+    cursor: default;
+    transition: background 0.15s;
+  }
+
+  .black-key.lit {
+    background: var(--highlight);
+    box-shadow: 0 0 12px rgba(233,69,96,0.7);
+  }
+
+  .black-key.lit-root {
+    background: var(--highlight-root);
+    box-shadow: 0 0 12px rgba(245,166,35,0.8);
+  }
+
+  .key-label {
+    font-size: 0.6rem;
+    color: #888;
+    font-weight: 600;
+    pointer-events: none;
+    text-align: center;
+    line-height: 1.1;
+  }
+
+  .white-key.lit .key-label,
+  .white-key.lit-root .key-label { color: #fff; font-weight: 700; }
+
+  .black-key-label {
+    position: absolute;
+    bottom: 6px;
+    width: 100%;
+    text-align: center;
+    font-size: 0.55rem;
+    color: #777;
+    font-weight: 600;
+    pointer-events: none;
+  }
+
+  .black-key.lit .black-key-label,
+  .black-key.lit-root .black-key-label { color: #fff; font-weight: 700; }
+
+  .legend {
+    max-width: 860px;
+    margin: 0 auto 20px;
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    font-size: 0.8rem;
+    color: var(--text2);
+  }
+
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .legend-dot {
+    width: 14px; height: 14px;
+    border-radius: 3px;
+    display: inline-block;
+  }
+  .legend-dot.root { background: var(--highlight-root); }
+  .legend-dot.other { background: var(--highlight); }
+
+  @media (max-width: 600px) {
+    .controls { grid-template-columns: 1fr 1fr; }
+    .white-key { width: 36px; height: 130px; }
+    .black-key { width: 22px; height: 78px; }
+  }
+</style>
+</head>
+<body>
+
+<h1>Piano Chord Visualizer</h1>
+<p class="subtitle">Interactive chord explorer with inversions, extensions &amp; transposition</p>
+
+<div class="controls">
+  <div class="control-group">
+    <label>Root Note</label>
+    <select id="rootSelect"></select>
+  </div>
+  <div class="control-group">
+    <label>Quality</label>
+    <select id="qualitySelect"></select>
+  </div>
+  <div class="control-group">
+    <label>Inversion</label>
+    <select id="inversionSelect"></select>
+  </div>
+  <div class="control-group">
+    <label>Transpose (semitones)</label>
+    <select id="transposeSelect"></select>
+  </div>
+</div>
+
+<div class="extensions-grid">
+  <label class="section-label">Extensions / Alterations</label>
+  <div class="ext-buttons" id="extButtons"></div>
+</div>
+
+<div class="toggles">
+  <button class="toggle-btn" id="rootlessBtn">Rootless Voicing</button>
+</div>
+
+<div class="warning-box" id="warningBox"></div>
+
+<div class="chord-display">
+  <div class="chord-name" id="chordName">—</div>
+  <div class="chord-notes-list" id="notesList"></div>
+</div>
+
+<div class="piano-wrap">
+  <div class="piano" id="piano"></div>
+</div>
+
+<div class="legend">
+  <div class="legend-item"><span class="legend-dot root"></span> Root note</div>
+  <div class="legend-item"><span class="legend-dot other"></span> Chord tone</div>
+</div>
+
+<script>
+const NOTES_SHARP = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const NOTES_FLAT  = ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
+const PREFER_FLAT = new Set(['F','Bb','Eb','Ab','Db','Gb']);
+
+function noteName(semitone, rootName) {
+  const i = ((semitone % 12) + 12) % 12;
+  return PREFER_FLAT.has(rootName) ? NOTES_FLAT[i] : NOTES_SHARP[i];
+}
+
+const QUALITIES = [
+  { id: 'maj',   label: 'Major',          intervals: [0,4,7] },
+  { id: 'min',   label: 'Minor',          intervals: [0,3,7] },
+  { id: 'maj7',  label: 'Major 7',        intervals: [0,4,7,11] },
+  { id: 'm7',    label: 'Minor 7',        intervals: [0,3,7,10] },
+  { id: '7',     label: 'Dominant 7',     intervals: [0,4,7,10] },
+  { id: 'm7b5',  label: 'Half-Dim (ø7)', intervals: [0,3,6,10] },
+  { id: 'dim7',  label: 'Diminished 7',  intervals: [0,3,6,9] },
+  { id: 'aug',   label: 'Augmented',     intervals: [0,4,8] },
+  { id: 'aug7',  label: 'Aug Dom 7',     intervals: [0,4,8,10] },
+  { id: 'augM7', label: 'Aug Major 7',   intervals: [0,4,8,11] },
+  { id: 'sus2',  label: 'Sus2',          intervals: [0,2,7] },
+  { id: 'sus4',  label: 'Sus4',          intervals: [0,5,7] },
+  { id: '7sus4', label: '7sus4',         intervals: [0,5,7,10] },
+  { id: 'add9',  label: 'Add9',          intervals: [0,4,7,14] },
+  { id: 'madd9', label: 'Minor Add9',    intervals: [0,3,7,14] },
+  { id: '6',     label: 'Major 6',       intervals: [0,4,7,9] },
+  { id: 'm6',    label: 'Minor 6',       intervals: [0,3,7,9] },
+  { id: 'dim',   label: 'Diminished',    intervals: [0,3,6] },
+  { id: 'power', label: 'Power (5)',     intervals: [0,7] },
+];
+
+const EXTENSIONS = [
+  { id: 'b9',  label: '♭9',  semitone: 13, conflicts: ['9','#9'] },
+  { id: '9',   label: '9',   semitone: 14, conflicts: ['b9','#9'] },
+  { id: '#9',  label: '♯9',  semitone: 15, conflicts: ['b9','9'] },
+  { id: '11',  label: '11',  semitone: 17, conflicts: ['#11'] },
+  { id: '#11', label: '♯11', semitone: 18, conflicts: ['11'] },
+  { id: 'b13', label: '♭13', semitone: 20, conflicts: ['13'] },
+  { id: '13',  label: '13',  semitone: 21, conflicts: ['b13'] },
+  { id: '#5',  label: '♯5',  semitone: 8,  conflicts: [] },
+  { id: 'b5',  label: '♭5',  semitone: 6,  conflicts: [] },
+];
+
+function qualityExtConflict(qualityId, extId) {
+  const q = QUALITIES.find(q => q.id === qualityId);
+  if (!q) return null;
+  const has = s => q.intervals.includes(s);
+  if (extId === '11' && has(4)) return 'Natural 11th clashes with major 3rd (consider ♯11)';
+  if (extId === '#5' && ['aug','aug7','augM7'].includes(qualityId)) return '♯5 already in augmented chord';
+  if (extId === 'b5' && ['dim','dim7','m7b5'].includes(qualityId)) return '♭5 already in diminished chord';
+  return null;
+}
+
+const state = { root: 0, qualityId: 'maj7', inversion: 0, transpose: 0, activeExt: new Set(), rootless: false };
+
+function computeChord() {
+  const q = QUALITIES.find(q => q.id === state.qualityId);
+  let base = [...q.intervals];
+  const extObjs = [...state.activeExt].map(id => EXTENSIONS.find(e => e.id === id));
+  const extra = extObjs.map(e => e.semitone);
+  if (state.activeExt.has('#5')) base = base.filter(i => i !== 7);
+  if (state.activeExt.has('b5')) base = base.filter(i => i !== 7 && i !== 6);
+  let all = [...new Set([...base, ...extra])].sort((a,b) => a-b);
+  const transposedRoot = (state.root + state.transpose + 12) % 12;
+  const rootMidi = 48 + transposedRoot;
+  let notes = all.map(interval => ({ midi: rootMidi + interval, interval, isRoot: interval === 0 }));
+  const inv = Math.min(state.inversion, notes.length - 1);
+  for (let i = 0; i < inv; i++) notes[i].midi += 12;
+  notes.sort((a,b) => a.midi - b.midi);
+  if (state.rootless) {
+    const r = notes.find(n => n.isRoot);
+    if (r) notes = notes.filter(n => n !== r);
+  }
+  return { notes, transposedRoot, quality: q };
+}
+
+function chordSymbol(root, qualityId, activeExt, rootless) {
+  const rootStr = PREFER_FLAT.has(NOTES_SHARP[root]) ? NOTES_FLAT[root] : NOTES_SHARP[root];
+  const map = {
+    maj:'', min:'m', maj7:'maj7', m7:'m7', '7':'7', m7b5:'ø7', dim7:'°7',
+    aug:'+', aug7:'+7', augM7:'+M7', sus2:'sus2', sus4:'sus4', '7sus4':'7sus4',
+    add9:'add9', madd9:'madd9', '6':'6', m6:'m6', dim:'°', power:'5'
+  };
+  let sym = rootStr + (map[qualityId] ?? qualityId);
+  const exts = [...activeExt].map(id => EXTENSIONS.find(e=>e.id===id)?.label ?? id);
+  if (exts.length) sym += '(' + exts.join(',') + ')';
+  if (rootless) sym += ' [no root]';
+  return sym;
+}
+
+function computeWarnings() {
+  const warnings = [];
+  for (const extId of state.activeExt) {
+    const ext = EXTENSIONS.find(e => e.id === extId);
+    for (const cid of ext.conflicts) {
+      if (state.activeExt.has(cid) && extId < cid) {
+        const a = EXTENSIONS.find(e=>e.id===extId), b = EXTENSIONS.find(e=>e.id===cid);
+        warnings.push(`${a.label} conflicts with ${b.label}`);
+      }
+    }
+    const c = qualityExtConflict(state.qualityId, extId);
+    if (c) warnings.push(c);
+  }
+  return warnings;
+}
+
+const WHITE_PATTERN = [0,2,4,5,7,9,11];
+
+function buildPiano() {
+  const piano = document.getElementById('piano');
+  piano.innerHTML = '';
+  const startMidi = 48, numOctaves = 2, W = 46;
+  for (let oct = 0; oct < numOctaves; oct++) {
+    for (let wi = 0; wi < 7; wi++) {
+      const midi = startMidi + oct*12 + WHITE_PATTERN[wi];
+      const div = document.createElement('div');
+      div.className = 'white-key'; div.dataset.midi = midi;
+      const lbl = document.createElement('span'); lbl.className = 'key-label';
+      div.appendChild(lbl); piano.appendChild(div);
+    }
+  }
+  const wKeys = piano.querySelectorAll('.white-key');
+  for (let oct = 0; oct < numOctaves; oct++) {
+    const bSemi = [1,3,6,8,10], after = [0,1,3,4,5];
+    for (let bi = 0; bi < bSemi.length; bi++) {
+      const midi = startMidi + oct*12 + bSemi[bi];
+      const wKey = wKeys[oct*7 + after[bi]];
+      const div = document.createElement('div');
+      div.className = 'black-key'; div.dataset.midi = midi;
+      div.style.left = (wKey.offsetLeft + W - 14) + 'px';
+      const lbl = document.createElement('div'); lbl.className = 'black-key-label';
+      div.appendChild(lbl); piano.appendChild(div);
+    }
+  }
+}
+
+function render() {
+  const { notes, transposedRoot, quality } = computeChord();
+  const midiMap = new Map(notes.map(n => [n.midi, n]));
+  document.querySelectorAll('.white-key, .black-key').forEach(key => {
+    const midi = parseInt(key.dataset.midi);
+    const note = midiMap.get(midi);
+    const lbl = key.querySelector('.key-label, .black-key-label');
+    key.classList.remove('lit','lit-root');
+    if (lbl) lbl.textContent = '';
+    if (note) {
+      key.classList.add(note.isRoot && !state.rootless ? 'lit-root' : 'lit');
+      if (lbl) lbl.textContent = noteName(midi, NOTES_SHARP[transposedRoot]);
+    } else if (midi % 12 === 0 && lbl && key.classList.contains('white-key')) {
+      lbl.textContent = 'C' + Math.floor(midi/12 - 1);
+      lbl.style.color = '#bbb';
+    }
+  });
+
+  document.getElementById('chordName').textContent = chordSymbol(transposedRoot, state.qualityId, state.activeExt, state.rootless);
+
+  const notesList = document.getElementById('notesList');
+  notesList.innerHTML = notes.map(n => {
+    const nm = noteName(n.midi, NOTES_SHARP[transposedRoot]);
+    return `<span class="${n.isRoot ? 'root-note' : 'other-note'}">${nm}</span>`;
+  }).join(' &nbsp;–&nbsp; ');
+
+  updateInversionOptions(quality.intervals.length + state.activeExt.size);
+
+  const warnings = computeWarnings();
+  const wb = document.getElementById('warningBox');
+  wb.innerHTML = warnings.length ? '⚠️ ' + warnings.join(' &nbsp;|&nbsp; ⚠️ ') : '';
+  wb.classList.toggle('visible', warnings.length > 0);
+
+  document.querySelectorAll('.ext-btn').forEach(btn => {
+    const id = btn.dataset.ext;
+    const ext = EXTENSIONS.find(e => e.id === id);
+    btn.classList.remove('conflict');
+    if (state.activeExt.has(id)) {
+      const bad = ext.conflicts.some(c => state.activeExt.has(c)) || qualityExtConflict(state.qualityId, id);
+      if (bad) btn.classList.add('conflict');
+    }
+  });
+}
+
+function updateInversionOptions(noteCount) {
+  const sel = document.getElementById('inversionSelect');
+  const cur = state.inversion;
+  sel.innerHTML = '';
+  const names = ['Root Position','1st Inversion','2nd Inversion','3rd Inversion','4th Inversion'];
+  for (let i = 0; i < noteCount; i++) {
+    const opt = document.createElement('option');
+    opt.value = i; opt.textContent = names[i] || `${i}th Inversion`;
+    sel.appendChild(opt);
+  }
+  sel.value = Math.min(cur, noteCount - 1);
+  state.inversion = parseInt(sel.value);
+}
+
+function setupUI() {
+  const rootSel = document.getElementById('rootSelect');
+  ['C','C#/Db','D','D#/Eb','E','F','F#/Gb','G','G#/Ab','A','A#/Bb','B'].forEach((name,i) => {
+    const opt = document.createElement('option'); opt.value = i; opt.textContent = name;
+    rootSel.appendChild(opt);
+  });
+  rootSel.value = 0;
+  rootSel.addEventListener('change', () => { state.root = parseInt(rootSel.value); render(); });
+
+  const qualSel = document.getElementById('qualitySelect');
+  QUALITIES.forEach(q => {
+    const opt = document.createElement('option'); opt.value = q.id; opt.textContent = q.label;
+    qualSel.appendChild(opt);
+  });
+  qualSel.value = state.qualityId;
+  qualSel.addEventListener('change', () => { state.qualityId = qualSel.value; state.inversion = 0; render(); });
+
+  document.getElementById('inversionSelect').addEventListener('change', e => { state.inversion = parseInt(e.target.value); render(); });
+
+  const transSel = document.getElementById('transposeSelect');
+  for (let i = -11; i <= 11; i++) {
+    const opt = document.createElement('option'); opt.value = i;
+    opt.textContent = i === 0 ? '0 (no transpose)' : (i > 0 ? `+${i}` : `${i}`);
+    transSel.appendChild(opt);
+  }
+  transSel.value = 0;
+  transSel.addEventListener('change', () => { state.transpose = parseInt(transSel.value); render(); });
+
+  const extContainer = document.getElementById('extButtons');
+  EXTENSIONS.forEach(ext => {
+    const btn = document.createElement('button');
+    btn.className = 'ext-btn'; btn.textContent = ext.label; btn.dataset.ext = ext.id;
+    btn.addEventListener('click', () => {
+      if (state.activeExt.has(ext.id)) { state.activeExt.delete(ext.id); btn.classList.remove('active'); }
+      else { state.activeExt.add(ext.id); btn.classList.add('active'); }
+      render();
+    });
+    extContainer.appendChild(btn);
+  });
+
+  document.getElementById('rootlessBtn').addEventListener('click', e => {
+    state.rootless = !state.rootless;
+    e.target.classList.toggle('active', state.rootless);
+    render();
+  });
+}
+
+setupUI();
+buildPiano();
+requestAnimationFrame(() => { buildPiano(); render(); });
+</script>
+</body>
+</html>

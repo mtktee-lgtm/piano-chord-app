@@ -1,611 +1,795 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="th">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Piano Chord Visualizer</title>
+<title>Chord Explorer — Piano & Guitar</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Noto+Sans+Thai:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #1a1a2e;
-    --surface: #16213e;
-    --surface2: #0f3460;
-    --accent: #e94560;
-    --accent2: #f5a623;
-    --text: #eaeaea;
-    --text2: #a0a8b8;
-    --white-key: #f5f5f0;
-    --black-key: #1a1a1a;
-    --highlight: #e94560;
-    --highlight-root: #f5a623;
-    --warning-bg: #3a1a1a;
-    --warning-border: #e94560;
-  }
+:root {
+  --bg: #0e0e10;
+  --bg2: #161618;
+  --bg3: #1e1e22;
+  --surface: #252528;
+  --border: #2e2e34;
+  --border2: #3a3a42;
+  --text: #f0f0f2;
+  --text2: #9090a0;
+  --text3: #5a5a6a;
+  --blue: #4d9eff;
+  --blue2: #1a6ad4;
+  --green: #3ecf8e;
+  --amber: #f0b429;
+  --red: #ff5f5f;
+  --mono: 'Space Mono', monospace;
+  --thai: 'Noto Sans Thai', sans-serif;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html { background:var(--bg); color:var(--text); font-family:var(--thai); }
+body { min-height:100vh; padding:0 0 4rem; }
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+/* HEADER */
+.header {
+  padding: 1.5rem 2rem 1rem;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 1rem;
+}
+.logo { font-family:var(--mono); font-size:18px; font-weight:700; color:var(--text); letter-spacing:-1px; }
+.logo span { color:var(--blue); }
+.tagline { font-size:12px; color:var(--text3); font-family:var(--mono); }
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Segoe UI', system-ui, sans-serif;
-    min-height: 100vh;
-    padding: 20px;
-  }
+/* TABS */
+.tabs {
+  display: flex; gap:0; padding: 0 2rem;
+  border-bottom: 1px solid var(--border);
+}
+.tab {
+  padding: .75rem 1.5rem;
+  font-size: 13px; font-family:var(--mono);
+  color: var(--text3); cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all .15s; user-select:none;
+}
+.tab.active { color:var(--blue); border-bottom-color:var(--blue); }
+.tab:hover:not(.active) { color:var(--text2); }
 
-  h1 {
-    text-align: center;
-    font-size: 1.8rem;
-    margin-bottom: 4px;
-    background: linear-gradient(135deg, var(--accent), var(--accent2));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
+/* PANELS */
+.panel { display:none; padding:1.5rem 2rem; }
+.panel.active { display:block; }
 
-  .subtitle {
-    text-align: center;
-    color: var(--text2);
-    font-size: 0.85rem;
-    margin-bottom: 24px;
-  }
+/* CONTROLS */
+.ctrl-grid { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:1rem; }
+.cg { display:flex; flex-direction:column; gap:4px; }
+.cg label { font-size:11px; color:var(--text3); font-family:var(--mono); letter-spacing:.5px; text-transform:uppercase; }
+select {
+  background:var(--surface); color:var(--text);
+  border:1px solid var(--border2); border-radius:6px;
+  padding:6px 10px; font-size:13px;
+  font-family:var(--thai); cursor:pointer;
+  min-width:110px;
+}
+select:focus { outline:none; border-color:var(--blue); }
 
-  .controls {
-    max-width: 860px;
-    margin: 0 auto 28px;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: 14px;
-  }
+/* TOGGLE BUTTONS */
+.trow { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:1rem; }
+.tbtn {
+  font-size:11px; font-family:var(--mono);
+  padding:4px 10px; border-radius:4px;
+  border:1px solid var(--border2);
+  background:var(--surface); color:var(--text3);
+  cursor:pointer; transition:all .12s;
+}
+.tbtn.on { background:var(--blue2); color:var(--blue); border-color:var(--blue2); }
 
-  .control-group {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
+/* CHORD INFO BAR */
+.chord-bar {
+  display:flex; align-items:baseline; gap:12px;
+  margin-bottom:1rem; flex-wrap:wrap;
+}
+.chord-name { font-family:var(--mono); font-size:24px; font-weight:700; color:var(--text); }
+.chord-notes { font-size:13px; color:var(--text2); }
+.note-tag {
+  display:inline-block; font-size:11px; font-family:var(--mono);
+  padding:2px 8px; border-radius:3px; margin:0 2px;
+}
+.nt-root { background:#1a3a5c; color:var(--blue); }
+.nt-chord { background:var(--surface); color:var(--text3); border:1px solid var(--border); }
+.nt-ext { background:#1a3a28; color:var(--green); }
 
-  label {
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--text2);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-  }
+/* DIAGRAMS */
+.diagrams-row { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:1rem; }
+.dw { display:flex; flex-direction:column; align-items:center; cursor:pointer; }
+.dw .dlabel { font-size:10px; font-family:var(--mono); color:var(--text3); margin-top:4px; text-align:center; }
+.dw.sel .dlabel { color:var(--blue); }
 
-  select {
-    background: var(--surface);
-    color: var(--text);
-    border: 1px solid var(--surface2);
-    border-radius: 8px;
-    padding: 8px 10px;
-    font-size: 0.95rem;
-    cursor: pointer;
-    outline: none;
-    transition: border-color 0.2s;
-    width: 100%;
-  }
+/* INFO CARDS */
+.info-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:1rem; }
+.ic {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:6px; padding:.6rem .9rem;
+}
+.il { font-size:10px; font-family:var(--mono); color:var(--text3); margin-bottom:3px; text-transform:uppercase; letter-spacing:.5px; }
+.iv { font-size:13px; color:var(--text2); line-height:1.4; }
 
-  select:focus, select:hover { border-color: var(--accent); }
+/* WARN */
+.warn { font-size:12px; color:var(--amber); margin-bottom:.6rem; font-family:var(--mono); min-height:16px; }
 
-  .extensions-grid {
-    max-width: 860px;
-    margin: 0 auto 20px;
-    background: var(--surface);
-    border: 1px solid var(--surface2);
-    border-radius: 12px;
-    padding: 14px 16px;
-  }
+/* EXTENSION BUTTONS */
+.ext-row { display:flex; gap:6px; margin-bottom:.75rem; }
+.ext-btn {
+  font-size:12px; font-family:var(--mono);
+  padding:4px 12px; border-radius:4px;
+  border:1px solid var(--border2);
+  background:var(--surface); color:var(--text3);
+  cursor:pointer; transition:all .12s;
+}
+.ext-btn.active { background:#1a3a28; color:var(--green); border-color:#2a5a3a; }
+.ext-btn.warn { background:#3a2a0a; color:var(--amber); border-color:#5a4010; }
 
-  .extensions-grid label.section-label {
-    display: block;
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--text2);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    margin-bottom: 10px;
-  }
+/* SECTION DIVIDER */
+.sdiv {
+  border-top:1px solid var(--border); margin:1.5rem 0 1rem;
+  padding-top:1rem;
+}
+.sdiv-label { font-size:11px; font-family:var(--mono); color:var(--text3); text-transform:uppercase; letter-spacing:1px; margin-bottom:.75rem; }
 
-  .ext-buttons {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
+/* VOICE LEADING */
+.vl-ab { display:flex; gap:10px; align-items:flex-start; flex-wrap:wrap; margin-bottom:.75rem; }
+.vl-chord-wrap { display:flex; flex-direction:column; align-items:center; }
+.vl-chord-label { font-size:11px; font-family:var(--mono); color:var(--text3); margin-top:4px; }
+.swap-btn {
+  font-size:16px; padding:6px 10px; margin-top:40px;
+  background:var(--surface); border:1px solid var(--border2);
+  color:var(--text3); border-radius:6px; cursor:pointer;
+}
+.swap-btn:hover { color:var(--blue); }
+.vl-table { width:100%; border-collapse:collapse; font-size:12px; }
+.vl-table td { padding:4px 8px; border-bottom:1px solid var(--border); }
+.vl-table td:first-child { font-family:var(--mono); color:var(--text3); font-size:11px; width:60px; }
+.vl-table td:nth-child(2) { color:var(--text2); font-family:var(--mono); }
+.vl-table td:nth-child(3) { color:var(--text3); }
+.vl-table td:nth-child(4) { color:var(--blue); font-family:var(--mono); }
+.badge { font-size:10px; padding:2px 6px; border-radius:3px; font-family:var(--mono); }
+.badge-easy { background:#1a3a28; color:var(--green); }
+.badge-mid { background:#2a2a0a; color:var(--amber); }
+.badge-hard { background:#3a1a1a; color:var(--red); }
+.vl-summary { font-size:11px; font-family:var(--mono); color:var(--text3); margin-top:.5rem; padding:.4rem .5rem; background:var(--surface); border-radius:4px; }
 
-  .ext-btn {
-    background: var(--surface2);
-    color: var(--text);
-    border: 1px solid transparent;
-    border-radius: 6px;
-    padding: 5px 12px;
-    font-size: 0.85rem;
-    cursor: pointer;
-    transition: all 0.15s;
-    user-select: none;
-  }
-
-  .ext-btn:hover { border-color: var(--accent); }
-  .ext-btn.active { background: var(--accent); border-color: var(--accent); font-weight: 600; }
-  .ext-btn.conflict { background: #4a2020; border-color: var(--warning-border); }
-
-  .toggles {
-    max-width: 860px;
-    margin: 0 auto 20px;
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-  }
-
-  .toggle-btn {
-    background: var(--surface);
-    color: var(--text2);
-    border: 1px solid var(--surface2);
-    border-radius: 8px;
-    padding: 7px 16px;
-    font-size: 0.85rem;
-    cursor: pointer;
-    transition: all 0.15s;
-    user-select: none;
-  }
-
-  .toggle-btn.active {
-    background: var(--surface2);
-    color: var(--text);
-    border-color: var(--accent2);
-  }
-
-  .warning-box {
-    max-width: 860px;
-    margin: 0 auto 16px;
-    background: var(--warning-bg);
-    border: 1px solid var(--warning-border);
-    border-radius: 10px;
-    padding: 10px 14px;
-    font-size: 0.85rem;
-    color: #ff8888;
-    display: none;
-  }
-
-  .warning-box.visible { display: block; }
-
-  .chord-display {
-    max-width: 860px;
-    margin: 0 auto 24px;
-    text-align: center;
-  }
-
-  .chord-name {
-    font-size: 2.2rem;
-    font-weight: 700;
-    letter-spacing: 0.02em;
-    background: linear-gradient(135deg, #fff, var(--accent2));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .chord-notes-list {
-    margin-top: 8px;
-    font-size: 0.95rem;
-    color: var(--text2);
-    letter-spacing: 0.08em;
-  }
-
-  .chord-notes-list span.root-note { color: var(--highlight-root); font-weight: 700; }
-  .chord-notes-list span.other-note { color: var(--text); }
-
-  .piano-wrap {
-    max-width: 900px;
-    margin: 0 auto 32px;
-    overflow-x: auto;
-    padding-bottom: 8px;
-  }
-
-  .piano {
-    position: relative;
-    display: flex;
-    height: 160px;
-    min-width: 520px;
-    margin: 0 auto;
-    width: fit-content;
-  }
-
-  .white-key {
-    position: relative;
-    width: 46px;
-    height: 160px;
-    background: var(--white-key);
-    border: 1px solid #bbb;
-    border-top: none;
-    border-radius: 0 0 6px 6px;
-    cursor: default;
-    flex-shrink: 0;
-    transition: background 0.15s;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    align-items: center;
-    padding-bottom: 8px;
-  }
-
-  .white-key.lit {
-    background: var(--highlight);
-    border-color: #c00;
-    box-shadow: 0 0 12px rgba(233,69,96,0.6);
-  }
-
-  .white-key.lit-root {
-    background: var(--highlight-root);
-    border-color: #c07000;
-    box-shadow: 0 0 12px rgba(245,166,35,0.7);
-  }
-
-  .black-key {
-    position: absolute;
-    width: 28px;
-    height: 98px;
-    background: var(--black-key);
-    border-radius: 0 0 5px 5px;
-    z-index: 2;
-    top: 0;
-    cursor: default;
-    transition: background 0.15s;
-  }
-
-  .black-key.lit {
-    background: var(--highlight);
-    box-shadow: 0 0 12px rgba(233,69,96,0.7);
-  }
-
-  .black-key.lit-root {
-    background: var(--highlight-root);
-    box-shadow: 0 0 12px rgba(245,166,35,0.8);
-  }
-
-  .key-label {
-    font-size: 0.6rem;
-    color: #888;
-    font-weight: 600;
-    pointer-events: none;
-    text-align: center;
-    line-height: 1.1;
-  }
-
-  .white-key.lit .key-label,
-  .white-key.lit-root .key-label { color: #fff; font-weight: 700; }
-
-  .black-key-label {
-    position: absolute;
-    bottom: 6px;
-    width: 100%;
-    text-align: center;
-    font-size: 0.55rem;
-    color: #777;
-    font-weight: 600;
-    pointer-events: none;
-  }
-
-  .black-key.lit .black-key-label,
-  .black-key.lit-root .black-key-label { color: #fff; font-weight: 700; }
-
-  .legend {
-    max-width: 860px;
-    margin: 0 auto 20px;
-    display: flex;
-    gap: 20px;
-    justify-content: center;
-    font-size: 0.8rem;
-    color: var(--text2);
-  }
-
-  .legend-item { display: flex; align-items: center; gap: 6px; }
-  .legend-dot {
-    width: 14px; height: 14px;
-    border-radius: 3px;
-    display: inline-block;
-  }
-  .legend-dot.root { background: var(--highlight-root); }
-  .legend-dot.other { background: var(--highlight); }
-
-  @media (max-width: 600px) {
-    .controls { grid-template-columns: 1fr 1fr; }
-    .white-key { width: 36px; height: 130px; }
-    .black-key { width: 22px; height: 78px; }
-  }
+/* KEYBOARD */
+.keyboard-wrap { margin-bottom:1rem; overflow-x:auto; }
 </style>
 </head>
 <body>
 
-<h1>Piano Chord Visualizer</h1>
-<p class="subtitle">Interactive chord explorer with inversions, extensions &amp; transposition</p>
-
-<div class="controls">
-  <div class="control-group">
-    <label>Root Note</label>
-    <select id="rootSelect"></select>
-  </div>
-  <div class="control-group">
-    <label>Quality</label>
-    <select id="qualitySelect"></select>
-  </div>
-  <div class="control-group">
-    <label>Inversion</label>
-    <select id="inversionSelect"></select>
-  </div>
-  <div class="control-group">
-    <label>Transpose (semitones)</label>
-    <select id="transposeSelect"></select>
+<div class="header">
+  <div>
+    <div class="logo">CHORD<span>.</span>EX</div>
+    <div class="tagline">Piano & Guitar Explorer</div>
   </div>
 </div>
 
-<div class="extensions-grid">
-  <label class="section-label">Extensions / Alterations</label>
-  <div class="ext-buttons" id="extButtons"></div>
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('piano',this)">Piano</div>
+  <div class="tab" onclick="switchTab('guitar',this)">Guitar</div>
 </div>
 
-<div class="toggles">
-  <button class="toggle-btn" id="rootlessBtn">Rootless Voicing</button>
+<!-- PIANO PANEL -->
+<div class="panel active" id="panel-piano">
+  <div class="ctrl-grid">
+    <div class="cg"><label>Root</label>
+      <select id="p-root">
+        <option>C</option><option>C#/Db</option><option>D</option><option>D#/Eb</option>
+        <option>E</option><option>F</option><option>F#/Gb</option><option>G</option>
+        <option>G#/Ab</option><option>A</option><option>A#/Bb</option><option>B</option>
+      </select></div>
+    <div class="cg"><label>Quality</label>
+      <select id="p-quality">
+        <option value="maj7">maj7</option><option value="maj9">maj9</option>
+        <option value="m7">m7</option><option value="m9">m9</option>
+        <option value="7">dom7</option><option value="sus4">sus4</option>
+        <option value="m7b5">m7b5</option><option value="dim7">dim7</option>
+        <option value="maj">major</option><option value="min">minor</option>
+      </select></div>
+    <div class="cg"><label>Inversion</label>
+      <select id="p-inv">
+        <option value="0">Root</option><option value="1">1st</option>
+        <option value="2">2nd</option><option value="3">3rd</option>
+      </select></div>
+    <div class="cg"><label>Voicing</label>
+      <select id="p-voicing">
+        <option value="close">Close</option>
+        <option value="rootless">Rootless R&B</option>
+        <option value="spread">Spread</option>
+      </select></div>
+  </div>
+
+  <div style="font-size:11px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Extension</div>
+  <div class="ext-row" id="p-ext-row"></div>
+  <div class="warn" id="p-warn"></div>
+
+  <div class="chord-bar">
+    <div class="chord-name" id="p-chord-name">Cmaj7</div>
+    <div id="p-note-tags"></div>
+  </div>
+
+  <div class="keyboard-wrap">
+    <svg id="p-piano" viewBox="0 0 560 110" style="width:100%;max-width:560px;height:110px;display:block;"></svg>
+  </div>
+
+  <div class="info-row">
+    <div class="ic"><div class="il">Bass note</div><div class="iv" id="p-bass-note">C</div></div>
+    <div class="ic"><div class="il">Notes low → high</div><div class="iv" id="p-notes-lh"></div></div>
+  </div>
+
+  <div class="sdiv">
+    <div class="sdiv-label">All inversions</div>
+    <div id="p-inv-cards" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
+  </div>
 </div>
 
-<div class="warning-box" id="warningBox"></div>
+<!-- GUITAR PANEL -->
+<div class="panel" id="panel-guitar">
+  <div class="ctrl-grid">
+    <div class="cg"><label>Root</label>
+      <select id="g-root">
+        <option>C</option><option>C#/Db</option><option>D</option><option>D#/Eb</option>
+        <option>E</option><option>F</option><option>F#/Gb</option><option>G</option>
+        <option>G#/Ab</option><option>A</option><option>A#/Bb</option><option>B</option>
+      </select></div>
+    <div class="cg"><label>Quality</label>
+      <select id="g-quality">
+        <option value="maj">major</option><option value="min">minor</option>
+        <option value="maj7">maj7</option><option value="m7">m7</option>
+        <option value="7">dom7</option><option value="sus4">sus4</option>
+        <option value="sus2">sus2</option><option value="add9">add9</option>
+        <option value="maj9">maj9</option><option value="m9">m9</option>
+        <option value="m7b5">m7b5</option><option value="dim7">dim7</option>
+        <option value="aug">aug</option>
+      </select></div>
+    <div class="cg"><label>Bass/Slash</label>
+      <select id="g-bass">
+        <option value="">— none</option>
+        <option>C</option><option>C#/Db</option><option>D</option><option>D#/Eb</option>
+        <option>E</option><option>F</option><option>F#/Gb</option><option>G</option>
+        <option>G#/Ab</option><option>A</option><option>A#/Bb</option><option>B</option>
+      </select></div>
+    <div class="cg"><label>Capo</label>
+      <select id="g-capo">
+        <option value="0">No capo</option>
+        <option value="1">Capo 1</option><option value="2">Capo 2</option>
+        <option value="3">Capo 3</option><option value="4">Capo 4</option>
+        <option value="5">Capo 5</option>
+      </select></div>
+  </div>
 
-<div class="chord-display">
-  <div class="chord-name" id="chordName">—</div>
-  <div class="chord-notes-list" id="notesList"></div>
-</div>
+  <div class="trow">
+    <button class="tbtn on" id="tb-finger" onclick="toggleG('finger',this)">Finger numbers</button>
+    <button class="tbtn on" id="tb-notename" onclick="toggleG('notename',this)">Note names</button>
+    <button class="tbtn" id="tb-allpos" onclick="toggleG('allpos',this)">All positions</button>
+  </div>
 
-<div class="piano-wrap">
-  <div class="piano" id="piano"></div>
-</div>
+  <div class="chord-bar">
+    <div class="chord-name" id="g-chord-name">C</div>
+    <div style="font-size:13px;color:var(--text2)" id="g-notes-str"></div>
+  </div>
 
-<div class="legend">
-  <div class="legend-item"><span class="legend-dot root"></span> Root note</div>
-  <div class="legend-item"><span class="legend-dot other"></span> Chord tone</div>
+  <div class="diagrams-row" id="g-diagrams"></div>
+  <div class="info-row">
+    <div class="ic"><div class="il">Notes</div><div class="iv" id="g-notes"></div></div>
+    <div class="ic"><div class="il">Tip</div><div class="iv" id="g-tip"></div></div>
+  </div>
+
+  <div class="sdiv">
+    <div class="sdiv-label">Voice leading A → B</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:.75rem;align-items:flex-end;">
+      <div class="cg"><label>Chord A</label>
+        <select id="vl-rA" onchange="renderVL()">
+          <option>C</option><option>C#/Db</option><option>D</option><option>D#/Eb</option>
+          <option>E</option><option>F</option><option>F#/Gb</option><option>G</option>
+          <option>G#/Ab</option><option>A</option><option>A#/Bb</option><option>B</option>
+        </select></div>
+      <div class="cg"><label>&nbsp;</label>
+        <select id="vl-qA" onchange="renderVL()">
+          <option value="maj">major</option><option value="min">minor</option>
+          <option value="maj7">maj7</option><option value="m7">m7</option>
+          <option value="7">dom7</option><option value="sus4">sus4</option>
+        </select></div>
+      <button class="swap-btn" onclick="swapVL()">⇄</button>
+      <div class="cg"><label>Chord B</label>
+        <select id="vl-rB" onchange="renderVL()">
+          <option>C</option><option>C#/Db</option><option>D</option><option>D#/Eb</option>
+          <option>E</option><option>F</option><option>F#/Gb</option><option>G</option>
+          <option>G#/Ab</option><option>A</option><option>A#/Bb</option><option>B</option>
+        </select></div>
+      <div class="cg"><label>&nbsp;</label>
+        <select id="vl-qB" onchange="renderVL()">
+          <option value="min">minor</option><option value="maj">major</option>
+          <option value="maj7">maj7</option><option value="m7">m7</option>
+          <option value="7">dom7</option><option value="sus4">sus4</option>
+        </select></div>
+    </div>
+    <div id="vl-content"></div>
+  </div>
 </div>
 
 <script>
-const NOTES_SHARP = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
-const NOTES_FLAT  = ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
-const PREFER_FLAT = new Set(['F','Bb','Eb','Ab','Db','Gb']);
+// ─── SHARED ───────────────────────────────────────────────────────────
+const NOTES=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const NF={'C#':'Db','D#':'Eb','F#':'Gb','G#':'Ab','A#':'Bb'};
+const fn=n=>NF[n]||n;
+function ni(n){const map={'Db':'C#','Eb':'D#','Gb':'F#','Ab':'G#','Bb':'A#'};const x=n.split('/')[0];return NOTES.indexOf(map[x]||x);}
 
-function noteName(semitone, rootName) {
-  const i = ((semitone % 12) + 12) % 12;
-  return PREFER_FLAT.has(rootName) ? NOTES_FLAT[i] : NOTES_SHARP[i];
+// ─── PIANO ────────────────────────────────────────────────────────────
+const P_QUAL={maj7:[0,4,7,11],maj9:[0,4,7,11,14],m7:[0,3,7,10],m9:[0,3,7,10,14],7:[0,4,7,10],sus4:[0,5,7,10],m7b5:[0,3,6,10],dim7:[0,3,6,9],maj:[0,4,7],min:[0,3,7]};
+const P_EXT={7:10,9:14,11:17,13:21};
+const P_LABELS={maj7:'maj7',maj9:'maj9',m7:'m7',m9:'m9',7:'7',sus4:'sus4',m7b5:'m7b5',dim7:'dim7',maj:'',min:'m'};
+const OPEN_STR=[4,9,2,7,11,4];
+let pExt=new Set();
+
+function pChordNotes(root,qual,ext){
+  const ri=ni(root);
+  let iv=[...(P_QUAL[qual]||[0,4,7])];
+  const bs=new Set(iv.map(i=>i%12));
+  ext.forEach(e=>{const v=P_EXT[e];if(v!==undefined&&!bs.has(v%12)){iv.push(v);bs.add(v%12);}});
+  iv.sort((a,b)=>a-b);
+  return iv.map(i=>({name:NOTES[(ri+i)%12],midi:60+i,iv:i}));
 }
-
-const QUALITIES = [
-  { id: 'maj',   label: 'Major',          intervals: [0,4,7] },
-  { id: 'min',   label: 'Minor',          intervals: [0,3,7] },
-  { id: 'maj7',  label: 'Major 7',        intervals: [0,4,7,11] },
-  { id: 'm7',    label: 'Minor 7',        intervals: [0,3,7,10] },
-  { id: '7',     label: 'Dominant 7',     intervals: [0,4,7,10] },
-  { id: 'm7b5',  label: 'Half-Dim (ø7)', intervals: [0,3,6,10] },
-  { id: 'dim7',  label: 'Diminished 7',  intervals: [0,3,6,9] },
-  { id: 'aug',   label: 'Augmented',     intervals: [0,4,8] },
-  { id: 'aug7',  label: 'Aug Dom 7',     intervals: [0,4,8,10] },
-  { id: 'augM7', label: 'Aug Major 7',   intervals: [0,4,8,11] },
-  { id: 'sus2',  label: 'Sus2',          intervals: [0,2,7] },
-  { id: 'sus4',  label: 'Sus4',          intervals: [0,5,7] },
-  { id: '7sus4', label: '7sus4',         intervals: [0,5,7,10] },
-  { id: 'add9',  label: 'Add9',          intervals: [0,4,7,14] },
-  { id: 'madd9', label: 'Minor Add9',    intervals: [0,3,7,14] },
-  { id: '6',     label: 'Major 6',       intervals: [0,4,7,9] },
-  { id: 'm6',    label: 'Minor 6',       intervals: [0,3,7,9] },
-  { id: 'dim',   label: 'Diminished',    intervals: [0,3,6] },
-  { id: 'power', label: 'Power (5)',     intervals: [0,7] },
-];
-
-const EXTENSIONS = [
-  { id: 'b9',  label: '♭9',  semitone: 13, conflicts: ['9','#9'] },
-  { id: '9',   label: '9',   semitone: 14, conflicts: ['b9','#9'] },
-  { id: '#9',  label: '♯9',  semitone: 15, conflicts: ['b9','9'] },
-  { id: '11',  label: '11',  semitone: 17, conflicts: ['#11'] },
-  { id: '#11', label: '♯11', semitone: 18, conflicts: ['11'] },
-  { id: 'b13', label: '♭13', semitone: 20, conflicts: ['13'] },
-  { id: '13',  label: '13',  semitone: 21, conflicts: ['b13'] },
-  { id: '#5',  label: '♯5',  semitone: 8,  conflicts: [] },
-  { id: 'b5',  label: '♭5',  semitone: 6,  conflicts: [] },
-];
-
-function qualityExtConflict(qualityId, extId) {
-  const q = QUALITIES.find(q => q.id === qualityId);
-  if (!q) return null;
-  const has = s => q.intervals.includes(s);
-  if (extId === '11' && has(4)) return 'Natural 11th clashes with major 3rd (consider ♯11)';
-  if (extId === '#5' && ['aug','aug7','augM7'].includes(qualityId)) return '♯5 already in augmented chord';
-  if (extId === 'b5' && ['dim','dim7','m7b5'].includes(qualityId)) return '♭5 already in diminished chord';
-  return null;
-}
-
-const state = { root: 0, qualityId: 'maj7', inversion: 0, transpose: 0, activeExt: new Set(), rootless: false };
-
-function computeChord() {
-  const q = QUALITIES.find(q => q.id === state.qualityId);
-  let base = [...q.intervals];
-  const extObjs = [...state.activeExt].map(id => EXTENSIONS.find(e => e.id === id));
-  const extra = extObjs.map(e => e.semitone);
-  if (state.activeExt.has('#5')) base = base.filter(i => i !== 7);
-  if (state.activeExt.has('b5')) base = base.filter(i => i !== 7 && i !== 6);
-  let all = [...new Set([...base, ...extra])].sort((a,b) => a-b);
-  const transposedRoot = (state.root + state.transpose + 12) % 12;
-  const rootMidi = 48 + transposedRoot;
-  let notes = all.map(interval => ({ midi: rootMidi + interval, interval, isRoot: interval === 0 }));
-  const inv = Math.min(state.inversion, notes.length - 1);
-  for (let i = 0; i < inv; i++) notes[i].midi += 12;
-  notes.sort((a,b) => a.midi - b.midi);
-  if (state.rootless) {
-    const r = notes.find(n => n.isRoot);
-    if (r) notes = notes.filter(n => n !== r);
+function applyInv(notes,inv){
+  if(inv===0)return notes;
+  let a=[...notes];
+  for(let i=0;i<inv&&i<a.length-1;i++){
+    let n=a.shift();
+    while(n.midi<=a[a.length-1].midi)n={...n,midi:n.midi+12};
+    a.push(n);
   }
-  return { notes, transposedRoot, quality: q };
+  return a;
+}
+function applyVoicing(notes,style){
+  if(style==='rootless'){
+    const a=notes.filter(n=>n.iv%12!==0);
+    if(!a.length)return notes;
+    return a;
+  }
+  if(style==='spread'){
+    let a=[...notes];
+    for(let i=1;i<a.length;i++){
+      while(a[i].midi-a[i-1].midi<5)a[i]={...a[i],midi:a[i].midi+12};
+    }
+    return a;
+  }
+  return notes;
+}
+function pWarn(qual,ext){
+  const msgs=[];
+  if(ext.has(11)&&(qual==='maj7'||qual==='maj9'||qual==='maj'))msgs.push('11th ชนกับ 3rd ใน major — ฟังขัด');
+  if(ext.has(13)&&qual==='m7b5')msgs.push('13th ไม่เหมาะกับ m7b5');
+  return msgs.join(' · ');
 }
 
-function chordSymbol(root, qualityId, activeExt, rootless) {
-  const rootStr = PREFER_FLAT.has(NOTES_SHARP[root]) ? NOTES_FLAT[root] : NOTES_SHARP[root];
-  const map = {
-    maj:'', min:'m', maj7:'maj7', m7:'m7', '7':'7', m7b5:'ø7', dim7:'°7',
-    aug:'+', aug7:'+7', augM7:'+M7', sus2:'sus2', sus4:'sus4', '7sus4':'7sus4',
-    add9:'add9', madd9:'madd9', '6':'6', m6:'m6', dim:'°', power:'5'
-  };
-  let sym = rootStr + (map[qualityId] ?? qualityId);
-  const exts = [...activeExt].map(id => EXTENSIONS.find(e=>e.id===id)?.label ?? id);
-  if (exts.length) sym += '(' + exts.join(',') + ')';
-  if (rootless) sym += ' [no root]';
-  return sym;
+function drawPiano(midis){
+  const svg=document.getElementById('p-piano');
+  const WW=32,WH=100,BW=20,BH=62;
+  const START=48;
+  const whitePC=[0,2,4,5,7,9,11];
+  const blackPC=[1,3,null,6,8,10,null];
+  let h='';
+  for(let o=0;o<2;o++){
+    const base=START+o*12;
+    whitePC.forEach((pc,wi)=>{
+      const x=o*7*WW+wi*WW;
+      const midi=base+pc;
+      const hl=midis.some(m=>m%12===pc);
+      const isRoot=hl&&midis[0]%12===pc;
+      const fill=hl?(isRoot?'#4d9eff':'#3ecf8e'):'#e8e8ec';
+      h+=`<rect x="${x+1}" y="2" width="${WW-2}" height="${WH-2}" rx="3" fill="${fill}" stroke="#555" stroke-width="0.5"/>`;
+      if(hl){
+        const nn=fn(NOTES[pc]);
+        h+=`<text x="${x+WW/2}" y="${WH-8}" text-anchor="middle" font-size="9" fill="${isRoot?'white':'#0e2a1a'}" font-weight="bold">${nn}</text>`;
+      }
+    });
+  }
+  for(let o=0;o<2;o++){
+    const base=START+o*12;
+    blackPC.forEach((pc,wi)=>{
+      if(pc===null)return;
+      const x=o*7*WW+wi*WW+WW-BW/2+2;
+      const hl=midis.some(m=>m%12===pc);
+      const isRoot=hl&&midis[0]%12===pc;
+      const fill=hl?(isRoot?'#1a6ad4':'#0f6e56'):'#1a1a1e';
+      h+=`<rect x="${x}" y="2" width="${BW}" height="${BH}" rx="2" fill="${fill}"/>`;
+      if(hl){const nn=fn(NOTES[pc]);h+=`<text x="${x+BW/2}" y="${BH-6}" text-anchor="middle" font-size="7.5" fill="white" font-weight="bold">${nn}</text>`;}
+    });
+  }
+  svg.innerHTML=h;
 }
 
-function computeWarnings() {
-  const warnings = [];
-  for (const extId of state.activeExt) {
-    const ext = EXTENSIONS.find(e => e.id === extId);
-    for (const cid of ext.conflicts) {
-      if (state.activeExt.has(cid) && extId < cid) {
-        const a = EXTENSIONS.find(e=>e.id===extId), b = EXTENSIONS.find(e=>e.id===cid);
-        warnings.push(`${a.label} conflicts with ${b.label}`);
+function renderPiano(){
+  const root=document.getElementById('p-root').value;
+  const qual=document.getElementById('p-quality').value;
+  const inv=parseInt(document.getElementById('p-inv').value);
+  const voic=document.getElementById('p-voicing').value;
+
+  document.getElementById('p-warn').textContent=pWarn(qual,pExt);
+
+  let notes=pChordNotes(root,qual,pExt);
+  notes=applyInv(notes,inv);
+  notes=applyVoicing(notes,voic);
+
+  drawPiano(notes.map(n=>n.midi));
+
+  const ql=P_LABELS[qual];
+  const extStr=[...pExt].sort((a,b)=>a-b).map(e=>`(${e})`).join('');
+  document.getElementById('p-chord-name').textContent=fn(root.split('/')[0])+ql+extStr;
+  document.getElementById('p-bass-note').textContent=fn(notes[0].name)+(inv>0?' — '+['','3rd','5th','7th'][inv]+' bass':'');
+  document.getElementById('p-notes-lh').textContent=notes.map(n=>fn(n.name)).join(' · ');
+
+  const tagsEl=document.getElementById('p-note-tags');
+  const rootPc=ni(root)%12;
+  tagsEl.innerHTML=notes.map(n=>{
+    const isRoot=n.iv%12===0;
+    const isExt=n.iv>=10;
+    const cls=isRoot?'nt-root':isExt?'nt-ext':'nt-chord';
+    return `<span class="note-tag ${cls}">${fn(n.name)}</span>`;
+  }).join('');
+
+  const maxInv=Math.min(notes.length-1,3);
+  const cardsEl=document.getElementById('p-inv-cards');
+  cardsEl.innerHTML='';
+  for(let ii=0;ii<=maxInv;ii++){
+    let invN=pChordNotes(root,qual,pExt);
+    invN=applyInv(invN,ii);
+    invN=applyVoicing(invN,voic);
+    const labels=['Root pos','1st inv','2nd inv','3rd inv'];
+    const card=document.createElement('div');
+    card.style.cssText='background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:.5rem .75rem;cursor:pointer;min-width:100px;';
+    if(ii===inv)card.style.borderColor='var(--blue)';
+    card.innerHTML=`<div style="font-size:10px;font-family:var(--mono);color:var(--text3);margin-bottom:2px">${labels[ii]}</div><div style="font-size:12px;font-family:var(--mono);color:var(--blue)">${invN.map(n=>fn(n.name)).join(' ')}</div><div style="font-size:11px;color:var(--text3)">bass: ${fn(invN[0].name)}</div>`;
+    card.onclick=()=>{document.getElementById('p-inv').value=ii;renderPiano();};
+    cardsEl.appendChild(card);
+  }
+
+  updateExtBtns(qual);
+}
+
+function updateExtBtns(qual){
+  document.querySelectorAll('.ext-btn').forEach(btn=>{
+    const e=parseInt(btn.dataset.ext);
+    const isWarn=(e===11&&(qual==='maj7'||qual==='maj9'||qual==='maj'))||(e===13&&qual==='m7b5');
+    btn.className='ext-btn'+(pExt.has(e)?' active':'')+(isWarn?' warn':'');
+  });
+}
+
+function initExtBtns(){
+  const row=document.getElementById('p-ext-row');
+  [7,9,11,13].forEach(e=>{
+    const btn=document.createElement('button');
+    btn.className='ext-btn';btn.textContent=e;btn.dataset.ext=e;
+    btn.onclick=()=>{pExt.has(e)?pExt.delete(e):pExt.add(e);renderPiano();};
+    row.appendChild(btn);
+  });
+}
+
+// ─── GUITAR ───────────────────────────────────────────────────────────
+const G_QUAL={maj:[0,4,7],min:[0,3,7],maj7:[0,4,7,11],m7:[0,3,7,10],7:[0,4,7,10],sus4:[0,5,7],sus2:[0,2,7],add9:[0,4,7,14],maj9:[0,4,7,11,14],m9:[0,3,7,10,14],m7b5:[0,3,6,10],dim7:[0,3,6,9],aug:[0,4,8]};
+const G_LABELS={maj:'',min:'m',maj7:'maj7',m7:'m7',7:'7',sus4:'sus4',sus2:'sus2',add9:'add9',maj9:'maj9',m9:'m9',m7b5:'m7b5',dim7:'dim7',aug:'aug'};
+const G_OPEN=[4,9,2,7,11,4];
+
+const GDB={
+'C_maj':  [{f:[-1,3,2,0,1,0],fi:[null,3,2,null,1,null]},{f:[3,3,5,5,5,3],fi:[1,1,3,3,3,1]},{f:[8,10,10,9,8,8],fi:[1,3,4,2,1,1]}],
+'D_maj':  [{f:[-1,-1,0,2,3,2],fi:[null,null,null,1,3,2]},{f:[5,5,7,7,7,5],fi:[1,1,3,3,3,1]},{f:[10,12,12,11,10,10],fi:[1,3,4,2,1,1]}],
+'E_maj':  [{f:[0,2,2,1,0,0],fi:[null,3,2,1,null,null]},{f:[7,9,9,8,7,7],fi:[1,3,4,2,1,1]}],
+'F_maj':  [{f:[1,3,3,2,1,1],fi:[1,3,4,2,1,1]},{f:[8,10,10,9,8,8],fi:[1,3,4,2,1,1]}],
+'G_maj':  [{f:[3,2,0,0,0,3],fi:[2,1,null,null,null,3]},{f:[3,5,5,4,3,3],fi:[1,3,4,2,1,1]}],
+'A_maj':  [{f:[-1,0,2,2,2,0],fi:[null,null,1,2,3,null]},{f:[5,7,7,6,5,5],fi:[1,3,4,2,1,1]}],
+'B_maj':  [{f:[-1,2,4,4,4,2],fi:[null,1,3,3,3,1]},{f:[7,9,9,8,7,7],fi:[1,3,4,2,1,1]}],
+'Bb_maj': [{f:[-1,1,3,3,3,1],fi:[null,1,3,3,3,1]},{f:[6,8,8,7,6,6],fi:[1,3,4,2,1,1]}],
+'Ab_maj': [{f:[4,6,6,5,4,4],fi:[1,3,4,2,1,1]}],
+'Gb_maj': [{f:[2,4,4,3,2,2],fi:[1,3,4,2,1,1]}],
+'Eb_maj': [{f:[-1,-1,1,3,4,3],fi:[null,null,1,2,4,3]},{f:[11,13,13,12,11,11],fi:[1,3,4,2,1,1]}],
+'Db_maj': [{f:[-1,-1,3,1,2,1],fi:[null,null,4,1,3,2]},{f:[9,11,11,10,9,9],fi:[1,3,4,2,1,1]}],
+'C_min':  [{f:[-1,3,5,5,4,3],fi:[null,1,3,4,2,1]},{f:[8,10,10,9,8,8],fi:[1,3,4,2,1,1]}],
+'D_min':  [{f:[-1,-1,0,2,3,1],fi:[null,null,null,2,3,1]},{f:[10,12,12,10,10,10],fi:[1,3,4,1,1,1]}],
+'E_min':  [{f:[0,2,2,0,0,0],fi:[null,2,3,null,null,null]},{f:[7,9,9,7,7,7],fi:[1,3,4,1,1,1]}],
+'F_min':  [{f:[1,3,3,1,1,1],fi:[1,3,4,1,1,1]},{f:[8,10,10,8,8,8],fi:[1,3,4,1,1,1]}],
+'G_min':  [{f:[3,5,5,3,3,3],fi:[1,3,4,1,1,1]}],
+'A_min':  [{f:[-1,0,2,2,1,0],fi:[null,null,2,3,1,null]},{f:[5,7,7,5,5,5],fi:[1,3,4,1,1,1]}],
+'B_min':  [{f:[-1,2,4,4,3,2],fi:[null,1,3,4,2,1]},{f:[7,9,9,7,7,7],fi:[1,3,4,1,1,1]}],
+'Bb_min': [{f:[-1,1,3,3,2,1],fi:[null,1,3,4,2,1]}],
+'Ab_min': [{f:[4,4,6,6,5,4],fi:[1,1,3,4,2,1]}],
+'Gb_min': [{f:[2,4,4,2,2,2],fi:[1,3,4,1,1,1]}],
+'Eb_min': [{f:[-1,-1,1,3,4,2],fi:[null,null,1,3,4,2]}],
+'Db_min': [{f:[-1,-1,2,1,2,0],fi:[null,null,2,1,3,null]}],
+'C_maj7': [{f:[-1,3,2,0,0,0],fi:[null,3,2,null,null,null]},{f:[8,10,9,9,8,8],fi:[1,4,2,3,1,1]}],
+'D_maj7': [{f:[-1,-1,0,2,2,2],fi:[null,null,null,1,1,1]},{f:[10,12,11,11,10,10],fi:[1,4,2,3,1,1]}],
+'E_maj7': [{f:[0,2,1,1,0,0],fi:[null,3,1,2,null,null]},{f:[7,9,8,8,7,7],fi:[1,4,2,3,1,1]}],
+'G_maj7': [{f:[3,2,0,0,0,2],fi:[3,2,null,null,null,1]}],
+'A_maj7': [{f:[-1,0,2,1,2,0],fi:[null,null,3,1,4,null]},{f:[5,7,6,6,5,5],fi:[1,4,2,3,1,1]}],
+'F_maj7': [{f:[1,3,2,2,1,1],fi:[1,4,2,3,1,1]}],
+'Bb_maj7':[{f:[-1,1,3,2,3,1],fi:[null,1,3,2,4,1]}],
+'Ab_maj7':[{f:[4,6,5,5,4,4],fi:[1,4,2,3,1,1]}],
+'C_m7':   [{f:[-1,3,5,3,4,3],fi:[null,1,4,1,3,1]},{f:[8,10,8,9,8,8],fi:[1,4,1,3,1,1]}],
+'D_m7':   [{f:[-1,-1,0,2,1,1],fi:[null,null,null,3,1,1]},{f:[10,12,10,10,10,10],fi:[1,3,1,1,1,1]}],
+'E_m7':   [{f:[0,2,2,0,3,0],fi:[null,2,3,null,4,null]},{f:[7,9,7,7,7,7],fi:[1,4,1,1,1,1]}],
+'G_m7':   [{f:[3,5,3,3,3,3],fi:[1,4,1,1,1,1]}],
+'A_m7':   [{f:[-1,0,2,0,1,0],fi:[null,null,2,null,1,null]},{f:[5,7,5,5,5,5],fi:[1,4,1,1,1,1]}],
+'F_m7':   [{f:[1,3,1,1,1,1],fi:[1,4,1,1,1,1]}],
+'Bb_m7':  [{f:[1,1,3,1,2,1],fi:[1,1,4,1,3,1]}],
+'C_7':    [{f:[-1,3,2,3,1,0],fi:[null,3,2,4,1,null]},{f:[8,10,8,9,8,8],fi:[1,3,1,2,1,1]}],
+'D_7':    [{f:[-1,-1,0,2,1,2],fi:[null,null,null,2,1,3]},{f:[10,12,10,11,10,10],fi:[1,3,1,2,1,1]}],
+'E_7':    [{f:[0,2,0,1,0,0],fi:[null,2,null,1,null,null]},{f:[7,9,7,8,7,7],fi:[1,3,1,2,1,1]}],
+'G_7':    [{f:[3,2,0,0,0,1],fi:[3,2,null,null,null,1]}],
+'A_7':    [{f:[-1,0,2,0,2,0],fi:[null,null,2,null,3,null]},{f:[5,7,5,6,5,5],fi:[1,3,1,2,1,1]}],
+'F_7':    [{f:[1,3,1,2,1,1],fi:[1,3,1,2,1,1]}],
+'B_7':    [{f:[-1,2,1,2,0,2],fi:[null,2,1,3,null,4]}],
+'Bb_7':   [{f:[-1,1,3,1,3,1],fi:[null,1,3,1,4,1]}],
+'C_sus4': [{f:[-1,3,3,0,1,1],fi:[null,3,4,null,1,1]}],
+'D_sus4': [{f:[-1,-1,0,2,3,3],fi:[null,null,null,1,3,4]}],
+'G_sus4': [{f:[3,3,0,0,1,3],fi:[2,3,null,null,1,4]}],
+'A_sus4': [{f:[-1,0,2,2,3,0],fi:[null,null,1,2,3,null]}],
+'E_sus4': [{f:[0,2,2,2,0,0],fi:[null,1,2,3,null,null]}],
+'F_sus4': [{f:[1,3,3,3,1,1],fi:[1,3,4,4,1,1]}],
+'C_sus2': [{f:[-1,3,0,0,1,3],fi:[null,2,null,null,1,3]}],
+'D_sus2': [{f:[-1,-1,0,2,3,0],fi:[null,null,null,1,2,null]}],
+'G_sus2': [{f:[3,2,0,0,3,3],fi:[3,2,null,null,3,4]}],
+'A_sus2': [{f:[-1,0,2,2,0,0],fi:[null,null,1,2,null,null]}],
+'C_add9': [{f:[-1,3,2,0,3,0],fi:[null,2,1,null,3,null]}],
+'D_add9': [{f:[-1,-1,0,2,3,0],fi:[null,null,null,1,3,null]}],
+'G_add9': [{f:[3,2,0,2,0,3],fi:[3,2,null,1,null,4]}],
+'A_add9': [{f:[-1,0,2,4,2,0],fi:[null,null,1,3,2,null]}],
+'D_m7b5': [{f:[-1,-1,0,1,1,1],fi:[null,null,null,1,1,1]}],
+'E_m7b5': [{f:[0,1,2,0,0,0],fi:[null,1,2,null,null,null]}],
+'B_m7b5': [{f:[-1,2,3,2,3,2],fi:[null,1,2,1,3,1]}],
+'D_dim7': [{f:[-1,-1,0,1,0,1],fi:[null,null,null,2,null,3]}],
+'E_dim7': [{f:[0,1,2,0,2,0],fi:[null,1,2,null,3,null]}],
+'B_dim7': [{f:[-1,2,3,1,3,1],fi:[null,2,3,1,4,1]}],
+'C_aug':  [{f:[-1,-1,2,1,1,0],fi:[null,null,3,1,2,null]}],
+'E_aug':  [{f:[0,3,2,1,1,0],fi:[null,4,3,2,1,null]}],
+'G_aug':  [{f:[3,2,1,0,0,3],fi:[4,3,2,null,null,4]}],
+};
+
+let gOpts={finger:true,notename:true,allpos:false};
+let selDiag=0;
+
+// Slash chord shapes: key = "Root_qual/Bass"
+const SLASH_DB={
+  'D_maj/Gb': [{f:[2,-1,0,2,3,2],fi:[1,null,null,2,4,3]}],
+  'D_maj/F':  [{f:[-1,-1,3,2,3,2],fi:[null,null,3,1,4,2]}],
+  'C_maj/E':  [{f:[0,3,2,0,1,0],fi:[null,3,2,null,1,null]}],
+  'C_maj/G':  [{f:[3,3,2,0,1,0],fi:[3,4,2,null,1,null]}],
+  'G_maj/B':  [{f:[-1,2,0,0,0,3],fi:[null,1,null,null,null,2]}],
+  'G_maj/D':  [{f:[-1,-1,0,0,0,3],fi:[null,null,null,null,null,1]}],
+  'A_maj/Gb': [{f:[2,0,2,2,2,0],fi:[1,null,2,3,4,null]}],
+  'A_maj/E':  [{f:[0,0,2,2,2,0],fi:[null,null,1,2,3,null]}],
+  'E_maj/Gb': [{f:[2,2,2,1,0,0],fi:[3,4,2,1,null,null]}],
+  'E_maj/Ab': [{f:[4,2,2,1,0,0],fi:[4,2,3,1,null,null]}],
+  'F_maj/A':  [{f:[-1,0,3,2,1,1],fi:[null,null,4,3,1,1]}],
+  'F_maj/C':  [{f:[-1,3,3,2,1,1],fi:[null,3,4,2,1,1]}],
+  'B_maj/Gb': [{f:[2,2,4,4,4,2],fi:[1,1,3,3,3,1]}],
+  'Bb_maj/D': [{f:[-1,5,3,3,3,1],fi:[null,4,2,2,2,1]}],
+  'Bb_maj/F': [{f:[1,1,3,3,3,1],fi:[1,1,3,3,3,1]}],
+  'Ab_maj/Eb':[{f:[-1,-1,1,1,1,4],fi:[null,null,1,1,1,4]}],
+  'Ab_maj/C': [{f:[-1,3,5,5,4,4],fi:[null,1,3,4,2,2]}],
+  'Db_maj/Ab':[{f:[4,4,6,6,6,4],fi:[1,1,3,3,3,1]}],
+  'Gb_maj/Db':[{f:[4,4,4,3,2,2],fi:[3,3,4,2,1,1]}],
+  'Eb_maj/Bb':[{f:[-1,1,1,3,4,3],fi:[null,1,1,2,4,3]}],
+  'C_min/Eb': [{f:[-1,-1,1,0,1,3],fi:[null,null,1,null,2,4]}],
+  'C_min/G':  [{f:[3,3,5,5,4,3],fi:[1,1,3,4,2,1]}],
+  'A_min/E':  [{f:[0,0,2,2,1,0],fi:[null,null,2,3,1,null]}],
+  'A_min/G':  [{f:[3,0,2,0,1,0],fi:[3,null,2,null,1,null]}],
+  'E_min/D':  [{f:[0,5,4,0,3,0],fi:[null,3,2,null,1,null]}],
+  'E_min/B':  [{f:[-1,2,2,0,0,0],fi:[null,1,2,null,null,null]}],
+  'D_min/F':  [{f:[1,-1,0,2,3,1],fi:[1,null,null,2,3,1]}],
+  'D_min/C':  [{f:[-1,3,0,2,3,1],fi:[null,3,null,1,4,2]}],
+  'G_min/Bb': [{f:[-1,1,3,3,3,1],fi:[null,1,3,3,3,1]}],
+  'G_min/D':  [{f:[-1,-1,0,3,3,3],fi:[null,null,null,1,1,1]}],
+  'F_min/Ab': [{f:[4,4,6,6,5,4],fi:[1,1,3,4,2,1]}],
+  'C_maj7/E': [{f:[0,3,2,0,0,0],fi:[null,3,2,null,null,null]}],
+  'C_maj7/G': [{f:[3,3,2,0,0,0],fi:[3,4,2,null,null,null]}],
+  'D_maj7/Gb':[{f:[2,-1,0,2,2,2],fi:[1,null,null,2,3,4]}],
+  'G_maj7/Gb':[{f:[2,2,0,0,0,2],fi:[2,3,null,null,null,1]}],
+  'Bb_maj7/D':[{f:[-1,5,3,2,3,1],fi:[null,4,2,1,3,1]}],
+  'C_m7/Eb':  [{f:[-1,3,5,3,4,3],fi:[null,1,4,1,3,1]}],
+  'C_m7/Bb':  [{f:[-1,1,5,3,4,3],fi:[null,1,4,2,3,2]}],
+  'A_m7/G':   [{f:[3,0,2,0,1,0],fi:[3,null,2,null,1,null]}],
+  'D_m7/C':   [{f:[-1,3,0,2,1,1],fi:[null,3,null,2,1,1]}],
+  'C_7/E':    [{f:[0,3,2,3,1,0],fi:[null,3,2,4,1,null]}],
+  'C_7/Bb':   [{f:[-1,1,2,3,1,0],fi:[null,1,2,3,1,null]}],
+  'G_7/F':    [{f:[1,2,0,0,0,1],fi:[1,2,null,null,null,1]}],
+  'G_7/B':    [{f:[-1,2,0,0,0,1],fi:[null,2,null,null,null,1]}],
+  'D_7/Gb':   [{f:[2,-1,0,2,1,2],fi:[2,null,null,3,1,4]}],
+  'F_7/Eb':   [{f:[-1,-1,1,2,1,1],fi:[null,null,1,3,1,1]}],
+  'Db_maj/F': [{f:[-1,-1,3,1,2,1],fi:[null,null,4,1,3,2]}],
+  'Db_maj/Ab':[{f:[4,4,6,6,6,4],fi:[1,1,3,3,3,1]}],
+  'Ab_7/Gb':  [{f:[2,4,4,5,4,4],fi:[1,2,3,4,2,2]}],
+  'Eb_m7/Db': [{f:[4,4,4,3,2,2],fi:[3,3,4,2,1,1]}],
+};
+
+function toggleG(k,btn){gOpts[k]=!gOpts[k];btn.classList.toggle('on',gOpts[k]);renderGuitar();}
+
+function gShapeKey(root,qual){
+  const m={'C#/Db':'Db','D#/Eb':'Eb','F#/Gb':'Gb','G#/Ab':'Ab','A#/Bb':'Bb'};
+  const r=m[root]||root;
+  return r+'_'+qual;
+}
+function gChordNotes(root,qual){
+  const ri=ni(root);
+  return (G_QUAL[qual]||[0,4,7]).map(i=>NOTES[(ri+i)%12]);
+}
+
+function makeGSVG(shape,fi,root,qual,isSel,bassNote){
+  const W=86,H=124;
+  const strings=6,frets=5;
+  const PL=18,PT=22,PR=6;
+  const sw=(W-PL-PR)/(strings-1);
+  const fh=(H-PT-12)/frets;
+  const frets_used=shape.filter(f=>f>0);
+  const minF=frets_used.length?Math.min(...frets_used):1;
+  const isOpen=minF<=1;
+  const startF=isOpen?1:minF;
+  let s=`<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">`;
+  s+=`<rect x="0.5" y="0.5" width="${W-1}" height="${H-1}" rx="6" fill="${isSel?'#1a2a3a':'#1e1e22'}" stroke="${isSel?'#4d9eff':'#2e2e34'}" stroke-width="${isSel?'1.5':'1'}"/>`;
+  if(isOpen)s+=`<rect x="${PL}" y="${PT}" width="${W-PL-PR}" height="3" rx="1" fill="#9090a0"/>`;
+  else s+=`<text x="${PL-3}" y="${PT+fh/2+4}" text-anchor="end" font-size="8" fill="#5a5a6a">${startF}</text>`;
+  for(let f=0;f<=frets;f++){const y=PT+(isOpen?3:0)+f*fh;s+=`<line x1="${PL}" y1="${y}" x2="${W-PR}" y2="${y}" stroke="#2e2e34" stroke-width="0.5"/>`;}
+  for(let st=0;st<strings;st++){const x=PL+st*sw;s+=`<line x1="${x}" y1="${PT}" x2="${x}" y2="${PT+(isOpen?3:0)+frets*fh}" stroke="#3a3a42" stroke-width="0.75"/>`;}
+  const rootPc=ni(root)%12;
+  shape.forEach((fret,si)=>{
+    const x=PL+si*sw;
+    if(fret===-1){s+=`<text x="${x}" y="${PT-8}" text-anchor="middle" font-size="10" fill="#5a5a6a">×</text>`;}
+    else if(fret===0){s+=`<circle cx="${x}" cy="${PT-8}" r="4" fill="none" stroke="#5a5a6a" stroke-width="1"/>`;}
+    else{
+      const df=fret-startF;
+      const cy=PT+(isOpen?3:0)+df*fh+fh/2;
+      const notePc=(G_OPEN[si]+fret)%12;
+      const isRoot=notePc===rootPc;
+      const isBassNote=bassNote&&notePc===ni(bassNote)%12&&si===shape.reduce((mi,f,i)=>f>=0&&i<mi?i:mi,6);const fill=isRoot?'#4d9eff':isBassNote?'#f0b429':'#3ecf8e';
+      s+=`<circle cx="${x}" cy="${cy}" r="9" fill="${fill}"/>`;
+      if(gOpts.notename){
+        const nn=fn(NOTES[notePc]);
+        s+=`<text x="${x}" y="${cy+4}" text-anchor="middle" font-size="7" fill="${isRoot?'white':'#0e2a1a'}" font-weight="bold">${nn}</text>`;
+      } else if(gOpts.finger&&fi&&fi[si]){
+        s+=`<text x="${x}" y="${cy+4}" text-anchor="middle" font-size="9" fill="white" font-weight="bold">${fi[si]}</text>`;
+      }
+      if(gOpts.finger&&fi&&fi[si]&&gOpts.notename){
+        s+=`<text x="${x+11}" y="${cy+3}" font-size="8" fill="#5a5a6a">${fi[si]}</text>`;
       }
     }
-    const c = qualityExtConflict(state.qualityId, extId);
-    if (c) warnings.push(c);
-  }
-  return warnings;
+  });
+  s+=`</svg>`;
+  return s;
 }
 
-const WHITE_PATTERN = [0,2,4,5,7,9,11];
-
-function buildPiano() {
-  const piano = document.getElementById('piano');
-  piano.innerHTML = '';
-  const startMidi = 48, numOctaves = 2, W = 46;
-  for (let oct = 0; oct < numOctaves; oct++) {
-    for (let wi = 0; wi < 7; wi++) {
-      const midi = startMidi + oct*12 + WHITE_PATTERN[wi];
-      const div = document.createElement('div');
-      div.className = 'white-key'; div.dataset.midi = midi;
-      const lbl = document.createElement('span'); lbl.className = 'key-label';
-      div.appendChild(lbl); piano.appendChild(div);
+function renderGuitar(){
+  const root=document.getElementById('g-root').value;
+  const qual=document.getElementById('g-quality').value;
+  const bass=document.getElementById('g-bass').value;
+  const capo=parseInt(document.getElementById('g-capo').value)||0;
+  const ql=G_LABELS[qual]||qual;
+  const bassStr=bass?'/'+fn(bass.split('/')[0]):'';
+  const capoStr=capo>0?` capo${capo}`:'';
+  document.getElementById('g-chord-name').textContent=fn(root.split('/')[0])+ql+bassStr+capoStr;
+  const notes=gChordNotes(root,qual);
+  document.getElementById('g-notes-str').textContent=notes.map(fn).join(' · ');
+  document.getElementById('g-notes').textContent=notes.map(fn).join(' · ');
+  // slash chord first
+  let shapes=[];
+  if(bass){
+    const bNote=fn(bass.split("/")[0]);
+    const slashKey=gShapeKey(root,qual)+"/"+bNote;
+    if(SLASH_DB[slashKey])shapes=SLASH_DB[slashKey];
+  }
+  if(!shapes.length){
+    const key=gShapeKey(root,qual);
+    shapes=GDB[key]||[];
+  }
+  if(!shapes.length){
+    const ri=ni(root);
+    for(const [k,v] of Object.entries(GDB)){
+      if(k.endsWith("_"+qual)){
+        const kr=ni(k.split("_")[0]);
+        const diff=(ri-kr+12)%12;
+        if(diff>0){
+          const base=v[0];
+          if(base){shapes=[{f:base.f.map(f=>f<0?f:f===0?diff:f+diff),fi:base.fi}];}
+          break;
+        }
+      }
     }
   }
-  const wKeys = piano.querySelectorAll('.white-key');
-  for (let oct = 0; oct < numOctaves; oct++) {
-    const bSemi = [1,3,6,8,10], after = [0,1,3,4,5];
-    for (let bi = 0; bi < bSemi.length; bi++) {
-      const midi = startMidi + oct*12 + bSemi[bi];
-      const wKey = wKeys[oct*7 + after[bi]];
-      const div = document.createElement('div');
-      div.className = 'black-key'; div.dataset.midi = midi;
-      div.style.left = (wKey.offsetLeft + W - 14) + 'px';
-      const lbl = document.createElement('div'); lbl.className = 'black-key-label';
-      div.appendChild(lbl); piano.appendChild(div);
-    }
+  const show=gOpts.allpos?shapes:shapes.slice(0,3);
+  const diagEl=document.getElementById('g-diagrams');
+  diagEl.innerHTML='';
+  if(!show.length){
+    diagEl.innerHTML=`<div style="font-size:12px;color:var(--text3);padding:.5rem 0">ไม่มี shape ในฐานข้อมูล</div>`;
+    document.getElementById('g-tip').textContent='—';
+    return;
   }
+  const posLbls=['Open','Barre','Var 2','Var 3','Var 4'];
+  if(selDiag>=show.length)selDiag=0;
+  show.forEach((item,idx)=>{
+    const shape=item.f||item;const fi=item.fi||null;
+    const div=document.createElement('div');
+    div.className='dw'+(idx===selDiag?' sel':'');
+    div.innerHTML=makeGSVG(shape,fi,root,qual,idx===selDiag,bass)+`<div class="dlabel">${posLbls[idx]||'Pos '+(idx+1)}</div>`;
+    div.onclick=()=>{selDiag=idx;renderGuitar();};
+    diagEl.appendChild(div);
+  });
+  const selS=show[selDiag]||show[0];
+  const shape=selS.f||selS;
+  const fingers=shape.filter(f=>f>0);
+  const minF=fingers.length?Math.min(...fingers):0;
+  const maxF=fingers.length?Math.max(...fingers):0;
+  const isBarre=shape.filter(f=>f===minF&&f>0).length>=3;
+  const tips=[];
+  if(isBarre)tips.push(`Barre fret ${minF}`);
+  if(maxF-minF>3)tips.push('stretch มาก');
+  if(shape.includes(-1))tips.push('มีสาย mute');
+  if(capo>0)tips.push(`Capo ${capo} +${capo} semitones`);
+  if(bass)tips.push(`Bass: ${fn(bass.split('/')[0])}`);
+  document.getElementById('g-tip').textContent=tips.length?tips.join(' · '):'กดตามจุด — น้ำเงิน=root, เขียว=โน้ตอื่น';
 }
 
-function render() {
-  const { notes, transposedRoot, quality } = computeChord();
-  const midiMap = new Map(notes.map(n => [n.midi, n]));
-  document.querySelectorAll('.white-key, .black-key').forEach(key => {
-    const midi = parseInt(key.dataset.midi);
-    const note = midiMap.get(midi);
-    const lbl = key.querySelector('.key-label, .black-key-label');
-    key.classList.remove('lit','lit-root');
-    if (lbl) lbl.textContent = '';
-    if (note) {
-      key.classList.add(note.isRoot && !state.rootless ? 'lit-root' : 'lit');
-      if (lbl) lbl.textContent = noteName(midi, NOTES_SHARP[transposedRoot]);
-    } else if (midi % 12 === 0 && lbl && key.classList.contains('white-key')) {
-      lbl.textContent = 'C' + Math.floor(midi/12 - 1);
-      lbl.style.color = '#bbb';
-    }
-  });
-
-  document.getElementById('chordName').textContent = chordSymbol(transposedRoot, state.qualityId, state.activeExt, state.rootless);
-
-  const notesList = document.getElementById('notesList');
-  notesList.innerHTML = notes.map(n => {
-    const nm = noteName(n.midi, NOTES_SHARP[transposedRoot]);
-    return `<span class="${n.isRoot ? 'root-note' : 'other-note'}">${nm}</span>`;
-  }).join(' &nbsp;–&nbsp; ');
-
-  updateInversionOptions(quality.intervals.length + state.activeExt.size);
-
-  const warnings = computeWarnings();
-  const wb = document.getElementById('warningBox');
-  wb.innerHTML = warnings.length ? '⚠️ ' + warnings.join(' &nbsp;|&nbsp; ⚠️ ') : '';
-  wb.classList.toggle('visible', warnings.length > 0);
-
-  document.querySelectorAll('.ext-btn').forEach(btn => {
-    const id = btn.dataset.ext;
-    const ext = EXTENSIONS.find(e => e.id === id);
-    btn.classList.remove('conflict');
-    if (state.activeExt.has(id)) {
-      const bad = ext.conflicts.some(c => state.activeExt.has(c)) || qualityExtConflict(state.qualityId, id);
-      if (bad) btn.classList.add('conflict');
-    }
-  });
-}
-
-function updateInversionOptions(noteCount) {
-  const sel = document.getElementById('inversionSelect');
-  const cur = state.inversion;
-  sel.innerHTML = '';
-  const names = ['Root Position','1st Inversion','2nd Inversion','3rd Inversion','4th Inversion'];
-  for (let i = 0; i < noteCount; i++) {
-    const opt = document.createElement('option');
-    opt.value = i; opt.textContent = names[i] || `${i}th Inversion`;
-    sel.appendChild(opt);
+function renderVL(){
+  const rA=document.getElementById('vl-rA').value;
+  const qA=document.getElementById('vl-qA').value;
+  const rB=document.getElementById('vl-rB').value;
+  const qB=document.getElementById('vl-qB').value;
+  const kA=gShapeKey(rA,qA),kB=gShapeKey(rB,qB);
+  const sA=GDB[kA]||[],sB=GDB[kB]||[];
+  const el=document.getElementById('vl-content');
+  if(!sA.length||!sB.length){el.innerHTML=`<div style="font-size:12px;color:var(--text3)">ไม่มี shape</div>`;return;}
+  const shA=sA[0].f||sA[0],shB=sB[0].f||sB[0];
+  const fiA=sA[0].fi||null,fiB=sB[0].fi||null;
+  const qlA=G_LABELS[qA]||qA,qlB=G_LABELS[qB]||qB;
+  let html=`<div style="display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap;margin-bottom:.75rem">`;
+  html+=`<div style="text-align:center">${makeGSVG(shA,fiA,rA,qA,false)}<div style="font-size:11px;font-family:var(--mono);color:var(--text3);margin-top:3px">${fn(rA.split('/')[0])+qlA}</div></div>`;
+  html+=`<div style="font-size:20px;color:var(--text3);margin-top:48px">→</div>`;
+  html+=`<div style="text-align:center">${makeGSVG(shB,fiB,rB,qB,false)}<div style="font-size:11px;font-family:var(--mono);color:var(--text3);margin-top:3px">${fn(rB.split('/')[0])+qlB}</div></div>`;
+  html+=`</div>`;
+  const strNames=['E','A','D','G','B','e'];
+  let total=0;
+  html+=`<table class="vl-table">`;
+  for(let s=0;s<6;s++){
+    const fA=shA[s],fB=shB[s];
+    if(fA<0&&fB<0)continue;
+    const nA=fA<0?'×':fA===0?fn(NOTES[G_OPEN[s]%12])+'○':fn(NOTES[(G_OPEN[s]+fA)%12])+` fr${fA}`;
+    const nB=fB<0?'×':fB===0?fn(NOTES[G_OPEN[s]%12])+'○':fn(NOTES[(G_OPEN[s]+fB)%12])+` fr${fB}`;
+    const diff=(fA<0||fB<0)?null:Math.abs(fB-fA);
+    if(diff!==null)total+=diff;
+    const move=diff===null?'lift':diff===0?'stay':diff===1?'±1':diff<=2?`±${diff}`:`±${diff}`;
+    const cls=diff===null?'':diff===0?'badge-easy':diff<=2?'badge-easy':'badge-hard';
+    html+=`<tr><td>${strNames[s]}</td><td>${nA}</td><td style="color:var(--text3)">→</td><td>${nB}</td><td><span class="badge ${cls}">${move}</span></td></tr>`;
   }
-  sel.value = Math.min(cur, noteCount - 1);
-  state.inversion = parseInt(sel.value);
+  html+=`</table>`;
+  const ease=total<=4?'ง่าย':total<=8?'ปานกลาง':total<=12?'ยากนิด':'ยาก';
+  const ecls=total<=4?'badge-easy':total<=8?'badge-mid':'badge-hard';
+  html+=`<div class="vl-summary">total movement: ${total} frets — <span class="badge ${ecls}">${ease}</span></div>`;
+  el.innerHTML=html;
 }
 
-function setupUI() {
-  const rootSel = document.getElementById('rootSelect');
-  ['C','C#/Db','D','D#/Eb','E','F','F#/Gb','G','G#/Ab','A','A#/Bb','B'].forEach((name,i) => {
-    const opt = document.createElement('option'); opt.value = i; opt.textContent = name;
-    rootSel.appendChild(opt);
-  });
-  rootSel.value = 0;
-  rootSel.addEventListener('change', () => { state.root = parseInt(rootSel.value); render(); });
-
-  const qualSel = document.getElementById('qualitySelect');
-  QUALITIES.forEach(q => {
-    const opt = document.createElement('option'); opt.value = q.id; opt.textContent = q.label;
-    qualSel.appendChild(opt);
-  });
-  qualSel.value = state.qualityId;
-  qualSel.addEventListener('change', () => { state.qualityId = qualSel.value; state.inversion = 0; render(); });
-
-  document.getElementById('inversionSelect').addEventListener('change', e => { state.inversion = parseInt(e.target.value); render(); });
-
-  const transSel = document.getElementById('transposeSelect');
-  for (let i = -11; i <= 11; i++) {
-    const opt = document.createElement('option'); opt.value = i;
-    opt.textContent = i === 0 ? '0 (no transpose)' : (i > 0 ? `+${i}` : `${i}`);
-    transSel.appendChild(opt);
-  }
-  transSel.value = 0;
-  transSel.addEventListener('change', () => { state.transpose = parseInt(transSel.value); render(); });
-
-  const extContainer = document.getElementById('extButtons');
-  EXTENSIONS.forEach(ext => {
-    const btn = document.createElement('button');
-    btn.className = 'ext-btn'; btn.textContent = ext.label; btn.dataset.ext = ext.id;
-    btn.addEventListener('click', () => {
-      if (state.activeExt.has(ext.id)) { state.activeExt.delete(ext.id); btn.classList.remove('active'); }
-      else { state.activeExt.add(ext.id); btn.classList.add('active'); }
-      render();
-    });
-    extContainer.appendChild(btn);
-  });
-
-  document.getElementById('rootlessBtn').addEventListener('click', e => {
-    state.rootless = !state.rootless;
-    e.target.classList.toggle('active', state.rootless);
-    render();
-  });
+function swapVL(){
+  const rA=document.getElementById('vl-rA'),rB=document.getElementById('vl-rB');
+  const qA=document.getElementById('vl-qA'),qB=document.getElementById('vl-qB');
+  [rA.value,rB.value]=[rB.value,rA.value];
+  [qA.value,qB.value]=[qB.value,qA.value];
+  renderVL();
 }
 
-setupUI();
-buildPiano();
-requestAnimationFrame(() => { buildPiano(); render(); });
+// ─── TABS ─────────────────────────────────────────────────────────────
+function switchTab(name,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('panel-'+name).classList.add('active');
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────
+['p-root','p-quality','p-inv','p-voicing'].forEach(id=>document.getElementById(id).addEventListener('change',()=>renderPiano()));
+['g-root','g-quality','g-bass','g-capo'].forEach(id=>document.getElementById(id).addEventListener('change',()=>{selDiag=0;renderGuitar();}));
+initExtBtns();
+renderPiano();
+renderGuitar();
+renderVL();
 </script>
 </body>
 </html>
